@@ -1,6 +1,3 @@
-"""
-18.02.2018 Исправлен вывод. Отключил 3-й способ. (Добавил STOPBALANCE)
-"""
 import time
 import csv
 import traceback
@@ -9,7 +6,7 @@ from functools import wraps
 
 from logger import setup_logger, DEBUG
 from stocks import Bittrex
-import winsound
+# import winsound
 
 BITTREX_KEY = 'b3d84ada73c24f4f9126f5b0a4f7427e'
 BITTREX_SECRET = '45b36050b0364e7193673d0fda066794'
@@ -219,9 +216,9 @@ class ShotgunBot:
                     if price_buy < self.stoploss_buy or price_sell > self.stoploss_sell:
                         raise StoplossError
 
-#                   проверка заданного лимита баланса. Если порог лимита баланса(сумма  размещенных ордеров
-#                   базовой валюты и общего баланса покупаемой валюты)  исчерпан,
-#                   то происходит возврат в основной цикл. Т.е., ждем пока какие либо ордера не реализуются.
+                    # проверка заданного лимита баланса. Если порог лимита баланса(сумма  размещенных ордеров
+                    # базовой валюты и общего баланса покупаемой валюты)  исчерпан,
+                    # то происходит возврат в основной цикл. Т.е., ждем пока какие либо ордера не реализуются.
                     limit_balance = base_balance - base_available + market_balance * price_buy
                     if limit_balance > self.STOPBALANCE:
                         raise StopBalanceError
@@ -288,7 +285,7 @@ class ShotgunBot:
                         self.logger.error(f'Ошибка создания ордера на продажу!')
                         continue
 
-                    winsound.Beep(frequency=100, duration=200)
+                    # winsound.Beep(frequency=100, duration=200)
                     profit = self.amount * (price_sell * self.FEE - price_buy / self.FEE)
                     self.sum_profit += profit
                     sum_profit += profit
@@ -308,6 +305,7 @@ class ShotgunBot:
                         f'Продано {self.all_amount} на сумму {self.sum_sell:.8f} {self.base_currency}')
             except:
                 print(datetime.now(), traceback.format_exc())
+            m = 0
 
 if __name__ == '__main__':
     bot = ShotgunBot(pair='BTC-WAVES', amount=3, mandatory_spread=.0025)
