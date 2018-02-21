@@ -305,7 +305,6 @@ class ShotgunBot:
                         f'Продано {self.all_amount} на сумму {self.sum_sell:.8f} {self.base_currency}')
             except:
                 print(datetime.now(), traceback.format_exc())
-            m = 0
 
 if __name__ == '__main__':
     bot = ShotgunBot(pair='BTC-WAVES', amount=3, mandatory_spread=.0025)
