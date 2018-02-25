@@ -94,7 +94,7 @@ class ShotgunBot:
 
         if limit_balance > self.STOPBALANCE:
             self.logger.info(f"Рабочий баланс {limit_balance} > "
-                             f"{self.STOPBALANCE}. STOPBALANCE")
+                             f"{self.STOPBALANCE}. STOPBALANCE")#SDF   ПРОБА
             raise StopBalanceError
         else:
             self.logger.debug(f"Рабочий баланс {limit_balance} < "
