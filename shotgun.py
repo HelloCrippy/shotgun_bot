@@ -99,7 +99,6 @@ class ShotgunBot:
         else:
             self.logger.debug(f"Рабочий баланс {limit_balance} < "
                               f"{self.STOPBALANCE}")
-            # `1111111111111111111
 
     def price_out(self, order_type):
         # При нехватке base
