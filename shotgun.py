@@ -2,7 +2,7 @@ import time
 import csv
 import traceback
 from datetime import datetime
-from functools import wraps
+from functools import wraps, reduce
 
 from logger import setup_logger, DEBUG
 from stocks import Bittrex
@@ -84,6 +84,21 @@ class ShotgunBot:
     #         raise
     #     else:
     #         return min_amount
+
+    def check_market_balance(self):
+        order_book = self.api.get_order_book()
+        orders = order_book['buy'] + order_book['sell']
+        limit_balance = reduce(lambda a, x: a + x['Quantity'] * x['Rate'],
+                               orders,
+                               0)
+
+        if limit_balance > self.STOPBALANCE:
+            self.logger.info(f"Рабочий баланс {limit_balance} > "
+                             f"{self.STOPBALANCE}. STOPBALANCE")
+            raise StopBalanceError
+        else:
+            self.logger.debug(f"Рабочий баланс {limit_balance} < "
+                              f"{self.STOPBALANCE}")
 
     def price_out(self, order_type):
         # При нехватке base
@@ -213,15 +228,13 @@ class ShotgunBot:
                     )
                     self.logger.debug(blc_log)
 
-                    if price_buy < self.stoploss_buy or price_sell > self.stoploss_sell:
-                        raise StoplossError
-
                     # проверка заданного лимита баланса. Если порог лимита баланса(сумма  размещенных ордеров
                     # базовой валюты и общего баланса покупаемой валюты)  исчерпан,
                     # то происходит возврат в основной цикл. Т.е., ждем пока какие либо ордера не реализуются.
-                    limit_balance = base_balance - base_available + market_balance * price_buy
-                    if limit_balance > self.STOPBALANCE:
-                        raise StopBalanceError
+
+
+                    if price_buy < self.stoploss_buy or price_sell > self.stoploss_sell:
+                        raise StoplossError
 
                     base_amount = self.amount * price_buy
                     if (base_available < base_amount) and (market_available < self.amount):
