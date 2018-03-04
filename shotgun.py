@@ -85,13 +85,14 @@ class ShotgunBot:
     #     else:
     #         return min_amount
 
-    def check_market_balance(self):
-        order_book = self.api.get_order_book()
-        orders = order_book['buy'] + order_book['sell']
-        limit_balance = reduce(lambda a, x: a + x['Quantity'] * x['Rate'],
-                               orders,
-                               0)
+    def check_market_balance(self, market_quantity):
+        open_orders = self.api.get_open_orders()
+        base_quantity = reduce(
+            lambda a, x: a + x['QuantityRemaining'] * x['Limit'],
+            open_orders['LIMIT_BUY'],
+            0)
 
+        limit_balance = base_quantity + market_quantity
         if limit_balance > self.STOPBALANCE:
             self.logger.info(f"Рабочий баланс {limit_balance} > "
                              f"{self.STOPBALANCE}. STOPBALANCE")
@@ -228,13 +229,11 @@ class ShotgunBot:
                     )
                     self.logger.debug(blc_log)
 
-                    # проверка заданного лимита баланса. Если порог лимита баланса(сумма  размещенных ордеров
-                    # базовой валюты и общего баланса покупаемой валюты)  исчерпан,
-                    # то происходит возврат в основной цикл. Т.е., ждем пока какие либо ордера не реализуются.
-
-
                     if price_buy < self.stoploss_buy or price_sell > self.stoploss_sell:
                         raise StoplossError
+
+                    # todo: уточнить на какой курс умножаем
+                    self.check_market_balance(market_balance * price_sell)
 
                     base_amount = self.amount * price_buy
                     if (base_available < base_amount) and (market_available < self.amount):
@@ -245,9 +244,9 @@ class ShotgunBot:
                         raise NotEnoughBalancesError('LIMIT_BUY')
 
                 except NotEnoughBalancesError as E:
-                    if base_available < base_amount :
+                    if base_available < base_amount:
                         self.logger.debug(f'Недостаточно баланса! {base_available:.8f} из {base_amount:.8f}  {self.base_currency}')
-                    if  market_available <  self.amount :
+                    if market_available < self.amount:
                         self.logger.debug (f'Недостаточно баланса! {market_available:.2f} из {self.amount} {self.market_currency}')
 
                    #self.logger.debug(
@@ -318,6 +317,7 @@ class ShotgunBot:
                         f'Продано {self.all_amount} на сумму {self.sum_sell:.8f} {self.base_currency}')
             except:
                 print(datetime.now(), traceback.format_exc())
+
 
 if __name__ == '__main__':
     bot = ShotgunBot(pair='BTC-WAVES', amount=3, mandatory_spread=.0025)
