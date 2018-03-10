@@ -83,7 +83,7 @@ class Bittrex:
                 current_amount = amount
 
             if blc > current_amount:
-                self.logger.info(f"Внутренний займ не выполнен. Не пускает параметр mandatory")
+                self.logger.info(f"Внутренний займ не выполнен. Валюта найдена")
                 break
 
             spread = float(order_book['sell'][0]['Rate'] /
@@ -113,6 +113,88 @@ class Bittrex:
                     order_id = self.set_order(order_type, amount, rate)
                     if not order_id:
                         self.logger.debug("Обязательный ордер не выполнен. Ошибка апи!")
+                        continue
+
+            sleep(timeout)
+            order = self.check_order(order_id)
+            if not order:
+                self.logger.info("Обязательный ордер не выполнен. Ошибка апи!")
+                break
+            if not order['IsOpen']:
+                self.logger.info(
+                    f"Обязательный ордер #{order_id} выполнен. Курс {order['Limit']}, "
+                    f"значение {order['Quantity'] - order['QuantityRemaining']}, "
+                    f"плата {order['Price']}"
+                )
+                return order
+
+        if order_id:
+            self.cancel_order(order_id)
+
+    @stock_errors
+    def set_mandatory_order2(self, amount, order_type, currency,
+                             timeout=1, permissible_spread=.0025):
+        """
+        Функция принудительно закрывает ордер. По таймауту перевыставляет
+        ордер в верх стакана, если разница в курсах не больше stoploss процентах
+        :param amount: значение ордера
+        :param order_type: покупка или продажа
+        :param currency: недостающая валюта
+        :param timeout: время перевыставления ордера
+        :param permissible_spread: допустимый для сделки спрэд
+        :return: json закрытый ордер
+        :rtype: dict
+        """
+        prev_rate = 0
+        order_id = None
+
+        while True:
+            blc = self.get_balances()[currency]['Available']
+            if blc is None:
+                self.logger.debug("Внутренний займ не выполнен. Ошибка апи!")
+                continue
+
+            order_book = self.get_order_book()
+            if order_book is None:
+                self.logger.debug("Внутренний займ не выполнен. Ошибка апи!")
+                continue
+            rate = order_book[order_type][0]['Rate']
+
+            if currency == 'BTC':
+                current_amount = rate * amount
+            else:
+                current_amount = amount
+
+            spread = float(order_book['sell'][0]['Rate'] /
+                           order_book['buy'][0]['Rate'] - 1)
+            if spread < permissible_spread:
+                self.logger.debug(
+                    f"Обязательный ордер не выполнен. Недопустимый спред "
+                    f"{spread:.2f} < {permissible_spread}")
+                break
+
+            if rate != prev_rate:
+                if order_id:
+                    self.cancel_order(order_id)
+                rate += (STEP if order_type == 'buy' else -STEP)
+                order_id = self.set_order(order_type, amount, rate)
+                if not order_id:
+                    self.logger.debug(
+                        "Обязательный ордер не выполнен. Ошибка апи!")
+                    continue
+
+                prev_rate = rate
+            else:
+                lower_rate = order_book[order_type][1]['Rate']
+                lower_rate += (STEP if order_type == 'buy' else -STEP)
+                if lower_rate < rate:
+                    if order_id:
+                        self.cancel_order(order_id)
+                    rate = prev_rate = lower_rate
+                    order_id = self.set_order(order_type, amount, rate)
+                    if not order_id:
+                        self.logger.debug(
+                            "Обязательный ордер не выполнен. Ошибка апи!")
                         continue
 
             sleep(timeout)

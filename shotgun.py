@@ -270,7 +270,7 @@ class ShotgunBot:
                         f'{(limit_balance - self.STOPBALANCE):.8f} {self.base_currency}')
 
                     if market_available >= 2 * self.amount:
-                        self.api.set_mandatory_order(
+                        self.api.set_mandatory_order2(
                             amount=self.amount, order_type='sell',
                             currency=self.market_currency,
                             permissible_spread=self.mandatory_spread
