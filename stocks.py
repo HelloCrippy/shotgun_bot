@@ -223,8 +223,6 @@ class Bittrex:
         """
         response = self.api.cancel(order_id)
         self.__get_result(response)
-
-        self.logger.info(f"Ордер #{order_id} снят")
         return True
 
     @stock_errors

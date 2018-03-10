@@ -269,12 +269,23 @@ class ShotgunBot:
                         f'Превышен лимит доступного баланса  {self.STOPBALANCE:.8f} на '
                         f'{(limit_balance - self.STOPBALANCE):.8f} {self.base_currency}')
 
+                    mandatory_order = None
                     if market_available >= 2 * self.amount:
-                        self.api.set_mandatory_order2(
+                        mandatory_order = self.api.set_mandatory_order2(
                             amount=self.amount, order_type='sell',
                             currency=self.market_currency,
                             permissible_spread=self.mandatory_spread
                         )
+
+                    if mandatory_order:
+                        self.logger.info(
+                            f"Внутренний займ {self.market_currency} осуществлен. Курс "
+                            f"{mandatory_order['Limit']}, количество {mandatory_order['Quantity']}"
+                        )
+                        return
+                    else:
+                        self.logger.debug(
+                            f"Внутренний займ {self.market_currency} не осуществлен")
 
                     continue
                 except (KeyError, TypeError):
