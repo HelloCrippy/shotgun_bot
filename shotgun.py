@@ -28,6 +28,10 @@ def write_profit(sum_profit):
         writer.writerow(profit)
 
 
+def to_datetime(string):
+    return datetime.strptime(string.split('.')[0], '%Y-%m-%dT%H:%M:%S')
+
+
 class StoplossError(Exception): pass
 class NotEnoughBalancesError(Exception): pass
 class StopBalanceError(Exception): pass
@@ -101,9 +105,26 @@ class ShotgunBot:
             self.logger.debug(f"Рабочий баланс {limit_balance} < "
                               f"{self.STOPBALANCE}")
 
+    def cancel_oldest(self):
+        open_orders = self.api.get_open_orders()
+        oldest = {'Opened': str(datetime.now())}
+
+        for order in open_orders:
+            if to_datetime(order['Opened']) < \
+                    to_datetime(oldest['Opened']):
+                oldest = order
+
+        if 'OrderUuid' in oldest:
+            self.api.cancel_order(oldest['OrderUuid'])
+
     def price_out(self, order_type):
         # При нехватке base
-        if order_type == 'LIMIT_SELL':
+        if order_type == 'ALL':
+            # Способ 3
+            self.cancel_oldest()
+            self.cancel_oldest()
+
+        elif order_type == 'LIMIT_SELL':
             # Способ 1
             open_orders = self.api.get_open_orders()
             if not open_orders:
@@ -132,18 +153,6 @@ class ShotgunBot:
                     return
                 else:
                     self.logger.debug(f"Внутренний займ {self.base_currency} не осуществлен")
-            # Способ 3
-            #orders_by_type = self.api.get_open_orders()
-            #if not orders_by_type:
-            #    return
-            #orders_by_type = orders_by_type['LIMIT_BUY']
-            #bottom_order = {'Limit': 99999999}
-            #for order in orders_by_type:
-            #    if order['Limit'] < bottom_order['Limit']:
-            #        bottom_order = order
-            #uuid = bottom_order.get('OrderUuid')
-            #if uuid:
-            #    self.api.cancel_order(uuid)
 
         # При нехватке market
         elif order_type == 'LIMIT_BUY':
@@ -179,18 +188,6 @@ class ShotgunBot:
                     return
                 else:
                     self.logger.debug(f"Внутренний займ {self.market_currency} не осуществлен")
-            # Способ 3
-            #orders_by_type = self.api.get_open_orders()
-            #if not orders_by_type:
-            #    return
-            #orders_by_type = orders_by_type['LIMIT_SELL']
-            #bottom_order = {'Limit': 0}
-            #for order in orders_by_type:
-            #    if order['Limit'] > bottom_order['Limit']:
-            #        bottom_order = order
-            #uuid = bottom_order.get('OrderUuid')
-            #if uuid:
-            #    self.api.cancel_order(uuid)
 
         else:
             # При нехватке base и market
@@ -265,12 +262,13 @@ class ShotgunBot:
                         f'Превышен лимит доступного баланса  {self.STOPBALANCE:.8f} на '
                         f'{(limit_balance - self.STOPBALANCE):.8f} {self.base_currency}')
 
-                    if market_available > 2 * self.amount:
+                    if market_available >= 2 * self.amount:
                         self.api.set_mandatory_order(
                             amount=self.amount, order_type='sell',
                             currency=self.market_currency,
                             spread=self.mandatory_spread
                         )
+
                     continue
                 except (KeyError, TypeError):
                     self.logger.error(f'Ошибка АПИ!')
