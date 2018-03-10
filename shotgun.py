@@ -107,23 +107,24 @@ class ShotgunBot:
 
     def cancel_oldest(self):
         open_orders = self.api.get_open_orders()
-        oldest = {'Opened': str(datetime.now())}
+        oldest = {'Opened': datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
 
         for order in open_orders:
-            if to_datetime(order['Opened']) < \
-                    to_datetime(oldest['Opened']):
+            if (to_datetime(order['Opened']) <
+                    to_datetime(oldest['Opened'])):
                 oldest = order
 
         if 'OrderUuid' in oldest:
             self.api.cancel_order(oldest['OrderUuid'])
 
     def price_out(self, order_type):
-        # При нехватке base
+        # При нехватке обеих валют
         if order_type == 'ALL':
             # Способ 3
             self.cancel_oldest()
             self.cancel_oldest()
 
+        # При нехватке base
         elif order_type == 'LIMIT_SELL':
             # Способ 1
             open_orders = self.api.get_open_orders()
