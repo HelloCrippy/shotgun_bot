@@ -232,7 +232,6 @@ class ShotgunBot:
                     if price_buy < self.stoploss_buy or price_sell > self.stoploss_sell:
                         raise StoplossError
 
-                    # todo: уточнить на какой курс умножаем
                     self.check_market_balance(market_balance * price_buy)
 
                     base_amount = self.amount * price_buy
@@ -266,7 +265,12 @@ class ShotgunBot:
                         f'Превышен лимит доступного баланса  {self.STOPBALANCE:.8f} на '
                         f'{(limit_balance - self.STOPBALANCE):.8f} {self.base_currency}')
 
-                    time.sleep(10)
+                    if market_available > 2 * self.amount:
+                        self.api.set_mandatory_order(
+                            amount=self.amount, order_type='sell',
+                            currency=self.market_currency,
+                            spread=self.mandatory_spread
+                        )
                     continue
                 except (KeyError, TypeError):
                     self.logger.error(f'Ошибка АПИ!')
