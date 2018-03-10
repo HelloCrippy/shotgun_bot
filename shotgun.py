@@ -265,9 +265,11 @@ class ShotgunBot:
                     continue
                 except StopBalanceError as E:
                     limit_balance = E.args[0]
-                    self.logger.debug(
+                    self.logger.info(
                         f'Превышен лимит доступного баланса  {self.STOPBALANCE:.8f} на '
                         f'{(limit_balance - self.STOPBALANCE):.8f} {self.base_currency}')
+
+                    self.logger.debug('Выполняем внутренний займ')
 
                     mandatory_order = None
                     if market_available >= 2 * self.amount:
