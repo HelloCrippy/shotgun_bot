@@ -233,7 +233,7 @@ class ShotgunBot:
                         raise StoplossError
 
                     # todo: уточнить на какой курс умножаем
-                    self.check_market_balance(market_balance * price_sell)
+                    self.check_market_balance(market_balance * price_buy)
 
                     base_amount = self.amount * price_buy
                     if (base_available < base_amount) and (market_available < self.amount):
