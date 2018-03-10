@@ -6,7 +6,7 @@ from functools import wraps, reduce
 
 from logger import setup_logger, DEBUG
 from stocks import Bittrex
-# import winsound
+import winsound
 
 BITTREX_KEY = 'b3d84ada73c24f4f9126f5b0a4f7427e'
 BITTREX_SECRET = '45b36050b0364e7193673d0fda066794'
@@ -40,9 +40,9 @@ class StopBalanceError(Exception): pass
 class ShotgunBot:
     FEE = .9975
     STEP = .00000001
-    STOPBALANCE = .15
+    STOPBALANCE = .3
 
-    def __init__(self, pair, amount, profit=0.15, stoploss_buy=.00064,
+    def __init__(self, pair, amount, profit=0.15, stoploss_buy=.00057,
                  stoploss_sell=.00083, prf=.00087, mandatory_spread=.0025,
                  timeout=3):
         """
@@ -100,7 +100,7 @@ class ShotgunBot:
         if limit_balance > self.STOPBALANCE:
             self.logger.info(f"Рабочий баланс {limit_balance} > "
                              f"{self.STOPBALANCE}. STOPBALANCE")
-            raise StopBalanceError
+            raise StopBalanceError(limit_balance)
         else:
             self.logger.debug(f"Рабочий баланс {limit_balance} < "
                               f"{self.STOPBALANCE}")
@@ -230,7 +230,7 @@ class ShotgunBot:
                         f"(всего {base_balance:.6f}({base_available:.6f}) {self.base_currency} "
                         f"и {market_balance:.2f}({market_available:.2f}) {self.market_currency})"
                     )
-                    self.logger.debug(blc_log)
+                    #self.logger.debug(blc_log)
 
                     if price_buy < self.stoploss_buy or price_sell > self.stoploss_sell:
                         raise StoplossError
@@ -263,7 +263,8 @@ class ShotgunBot:
                         f'Выход за пределы диапазона! {price_buy:.8f}  -  {price_sell:.8f}')
                     time.sleep(10)
                     continue
-                except StopBalanceError:
+                except StopBalanceError as E:
+                    limit_balance = E.args[0]
                     self.logger.debug(
                         f'Превышен лимит доступного баланса  {self.STOPBALANCE:.8f} на '
                         f'{(limit_balance - self.STOPBALANCE):.8f} {self.base_currency}')
@@ -305,7 +306,7 @@ class ShotgunBot:
                         self.logger.error(f'Ошибка создания ордера на продажу!')
                         continue
 
-                    # winsound.Beep(frequency=100, duration=200)
+                    winsound.Beep(frequency=100, duration=200)
                     profit = self.amount * (price_sell * self.FEE - price_buy / self.FEE)
                     self.sum_profit += profit
                     sum_profit += profit
@@ -328,5 +329,5 @@ class ShotgunBot:
 
 
 if __name__ == '__main__':
-    bot = ShotgunBot(pair='BTC-WAVES', amount=3, mandatory_spread=.0025)
+    bot = ShotgunBot(pair='BTC-WAVES', amount=5, mandatory_spread=.0025)
     bot.activate()

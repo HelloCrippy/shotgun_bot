@@ -68,12 +68,12 @@ class Bittrex:
         while True:
             blc = self.get_balances()[currency]['Available']
             if blc is None:
-                self.logger.debug("Обязательный ордер не выполнен. Ошибка апи!")
+                self.logger.debug("Внутренний займ не выполнен. Ошибка апи!")
                 continue
 
             order_book = self.get_order_book()
             if order_book is None:
-                self.logger.debug("Обязательный ордер не выполнен. Ошибка апи!")
+                self.logger.debug("Внутренний займ не выполнен. Ошибка апи!")
                 continue
             rate = order_book[order_type][0]['Rate']
 
@@ -83,7 +83,7 @@ class Bittrex:
                 current_amount = amount
 
             if blc > current_amount:
-                self.logger.info(f"Обязательный ордер не выполнен. Валюта найдена")
+                self.logger.info(f"Внутренний займ не выполнен. Не пускает параметр mandatory")
                 break
 
             spread = float(order_book['sell'][0]['Rate'] /
