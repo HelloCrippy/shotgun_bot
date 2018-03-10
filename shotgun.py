@@ -115,17 +115,18 @@ class ShotgunBot:
                 oldest = order
 
         if 'OrderUuid' in oldest:
-            self.api.cancel_order(oldest['OrderUuid'])
             self.logger.info(
-                f"Способ 3: самый старый ордер {oldest['OrderType']}, "
-                f"курс {oldest['Limit']}, сумма {oldest['QuantityRemaining']} "
-                f"дата {oldest['Opened']}")
+                f"Способ 3: закрываем самый старый ордер {oldest['OrderType']},"
+                f" курс {oldest['Limit']}, сумма {oldest['QuantityRemaining']}"
+                f" дата {oldest['Opened']}")
+            self.api.cancel_order(oldest['OrderUuid'])
 
     def price_out(self, order_type):
         # При нехватке обеих валют
         if order_type == 'ALL':
             # Способ 3
             self.cancel_oldest()
+            time.sleep(3)
             self.cancel_oldest()
 
         # При нехватке base
