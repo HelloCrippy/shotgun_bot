@@ -272,7 +272,7 @@ class ShotgunBot:
                         self.api.set_mandatory_order(
                             amount=self.amount, order_type='sell',
                             currency=self.market_currency,
-                            spread=self.mandatory_spread
+                            permissible_spread=self.mandatory_spread
                         )
 
                     continue
