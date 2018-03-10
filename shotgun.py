@@ -110,7 +110,6 @@ class ShotgunBot:
         oldest = {'Opened': datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
 
         for order in open_orders['LIMIT_SELL'] + open_orders['LIMIT_BUY']:
-            print(order['Opened'], )
             if (to_datetime(order['Opened']) <
                     to_datetime(oldest['Opened'])):
                 oldest = order
@@ -122,6 +121,7 @@ class ShotgunBot:
         # При нехватке обеих валют
         if order_type == 'ALL':
             # Способ 3
+            self.logger.info('Способ 3')
             self.cancel_oldest()
             self.cancel_oldest()
 
