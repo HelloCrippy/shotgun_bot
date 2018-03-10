@@ -109,7 +109,8 @@ class ShotgunBot:
         open_orders = self.api.get_open_orders()
         oldest = {'Opened': datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
 
-        for order in open_orders:
+        for order in open_orders['LIMIT_SELL'] + open_orders['LIMIT_BUY']:
+            print(order['Opened'], )
             if (to_datetime(order['Opened']) <
                     to_datetime(oldest['Opened'])):
                 oldest = order
