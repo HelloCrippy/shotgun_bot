@@ -148,9 +148,9 @@ class ShotgunBot:
                 return
             market_blc = market_blc[self.market_currency]['Available']
             if market_blc >= 2 * self.amount:
-                mandatory_order = self.api.set_mandatory_order(self.amount, 'sell',
-                                                               self.base_currency,
-                                                               self.mandatory_spread)
+                mandatory_order = self.api.loan(self.amount, 'sell',
+                                                self.base_currency,
+                                                self.mandatory_spread)
                 if mandatory_order:
                     self.logger.info(
                         f"Внутренний займ {self.base_currency} осуществлен. Курс "
@@ -183,9 +183,9 @@ class ShotgunBot:
                 return
             rate = rate['Bid'] + self.STEP
             if base_blc >= 2 * self.amount * rate:
-                mandatory_order = self.api.set_mandatory_order(self.amount, 'buy',
-                                                               self.market_currency,
-                                                               self.mandatory_spread)
+                mandatory_order = self.api.loan(self.amount, 'buy',
+                                                self.market_currency,
+                                                self.mandatory_spread)
                 if mandatory_order:
                     self.logger.info(
                         f"Внутренний займ {self.market_currency} осуществлен. Курс "
@@ -247,14 +247,20 @@ class ShotgunBot:
 
                 except NotEnoughBalancesError as E:
                     if base_available < base_amount:
-                        self.logger.debug(f'Недостаточно баланса! {base_available:.8f} из {base_amount:.8f}  {self.base_currency}')
+                        self.logger.debug(
+                            f'Недостаточно баланса! '
+                            f'{base_available:.8f} из {base_amount:.8f}  '
+                            f'{self.base_currency}')
                     if market_available < self.amount:
-                        self.logger.debug (f'Недостаточно баланса! {market_available:.2f} из {self.amount} {self.market_currency}')
+                        self.logger.debug(
+                            f'Недостаточно баланса! {market_available:.2f} '
+                            f'из {self.amount} {self.market_currency}')
 
                    #self.logger.debug(
                    #    f'Недостаточно баланса! {base_available:.8f} из {base_amount:.8f} '
                    #    f'{self.base_currency}; {market_available:.2f} из {self.amount} '
                    #    f'{self.market_currency}')
+
                     self.price_out(*E.args)
                     time.sleep(10)
                     continue
@@ -269,25 +275,23 @@ class ShotgunBot:
                         f'Превышен лимит доступного баланса  {self.STOPBALANCE:.8f} на '
                         f'{(limit_balance - self.STOPBALANCE):.8f} {self.base_currency}')
 
-                    self.logger.debug('Выполняем внутренний займ')
+                    self.logger.debug(
+                        f'Выполняем продажу {self.market_currency}')
 
-                    mandatory_order = None
-                    if market_available >= 2 * self.amount:
-                        mandatory_order = self.api.set_mandatory_order2(
-                            amount=self.amount, order_type='sell',
-                            currency=self.market_currency,
-                            permissible_spread=self.mandatory_spread
-                        )
+                    required_order = None
+                    required_order = self.api.set_required_order(
+                        self.amount, 'buy', self.market_currency,
+                        self.mandatory_spread)
 
-                    if mandatory_order:
+                    if required_order:
                         self.logger.info(
-                            f"Внутренний займ {self.market_currency} осуществлен. Курс "
+                            f"Обязательный ордер {self.market_currency} осуществлен. Курс "
                             f"{mandatory_order['Limit']}, количество {mandatory_order['Quantity']}"
                         )
                         return
                     else:
                         self.logger.debug(
-                            f"Внутренний займ {self.market_currency} не осуществлен")
+                            f"Обязательный ордер {self.market_currency} не осуществлен")
 
                     continue
                 except (KeyError, TypeError):
