@@ -1,2 +1,3 @@
 # shotgun_bot
-Однобиржевой бот для Bittrix
+
+Scalping treading bot for Bittrix exchange
